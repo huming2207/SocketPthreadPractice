@@ -132,12 +132,7 @@ void *connection_thread(void *args)
 {
 
   while (true) {
-
-    // Lock the critical section, if not possible, then forget about it lol...
-    // Use mutex_trylock is because user input is more important (locked mutex might block reading from stdin?).
-    pthread_mutex_trylock(&mutex);
     run_ping();
-    pthread_mutex_unlock(&mutex);
 
     // +1s, long lives to the server...
     sleep(1);
@@ -160,7 +155,9 @@ void run_ping()
  */
 void client_send_buffer(char *buffer)
 {
-
+  // Lock the critical section, if not possible, then forget about it lol...
+  // Use mutex_trylock is because user input is more important (locked mutex might block reading from stdin?).
+  pthread_mutex_trylock(&mutex);
   ssize_t send_size;
 
   if (!buffer) {
@@ -179,7 +176,7 @@ void client_send_buffer(char *buffer)
     fprintf(stderr, "Send: client disconnected!");
     return;
   }
-
+  pthread_mutex_unlock(&mutex);
 }
 
 /**
