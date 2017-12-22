@@ -98,17 +98,21 @@ void *user_thread(void *args)
   printf("UserThread: Initialisation finished, you can now input something.\n");
   while (true) {
 
-    // Lock the critical section
-    pthread_mutex_lock(&mutex);
-
     input_char = (char) fgetc(stdin);
 
     if (input_char == 's') {
 
       // Wipe the send buffer, then move the data from input buffer to send buffer
+      // Lock the critical section
+      pthread_mutex_lock(&mutex);
+
       printf("Changing send_buffer to: %s", input_buffer);
       memset(send_buffer, '\0', STRING_BUFFER_SIZE);
       strcpy(send_buffer, input_buffer);
+
+      // Critical section ends here
+      pthread_mutex_unlock(&mutex);
+
       memset(input_buffer, '\0', STRING_BUFFER_SIZE);
 
     } else if (input_char == 'r') {
@@ -119,7 +123,7 @@ void *user_thread(void *args)
       strcat(input_buffer, &input_char); // Stores user input for other keys
     }
 
-    pthread_mutex_unlock(&mutex);
+
   }
 }
 
@@ -156,8 +160,7 @@ void run_ping()
 void client_send_buffer(char *buffer)
 {
   // Lock the critical section, if not possible, then forget about it lol...
-  // Use mutex_trylock is because user input is more important (locked mutex might block reading from stdin?).
-  pthread_mutex_trylock(&mutex);
+  pthread_mutex_lock(&mutex);
   ssize_t send_size;
 
   if (!buffer) {
