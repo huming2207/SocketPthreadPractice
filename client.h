@@ -15,8 +15,6 @@ void *user_thread(void *args);
 
 void *connection_thread(void *args);
 
-void run_ping();
-
 void client_send_buffer(char *buffer);
 
 void client_recv_buffer();
@@ -29,11 +27,8 @@ char *input_buffer;
 
 char input_char;
 
-static int send_buffer_count;
+static unsigned long send_counter;
 
-pthread_t input_pt;
-
-#define SOCKS_CLIENT_PORT   12000
 #define STRING_BUFFER_SIZE      3072
 
 #endif //SOCKETPTHREADPRACTISE_CLIENT_H

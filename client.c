@@ -70,9 +70,6 @@ void client_init(char *ip_addr, uint16_t port)
     exit(EXIT_FAILURE);
   }
 
-  // Set send buffer
-  send_buffer_count = 0;
-
   // Start pthread threads
   pthread_create(&conn_pt, NULL, connection_thread, &socket_fd);
   pthread_create(&user_pt, NULL, user_thread, NULL);
@@ -102,11 +99,6 @@ void *user_thread(void *args)
 
     if (input_char == 's') {
 
-      // Lock the critical section
-      // Only the communication between send buffer and input buffer should be locked, as they are actually
-      // the ones which related to multi-threading stuff.
-      pthread_mutex_lock(&mutex);
-
       // Wipe the send buffer, then move the data from input buffer to send buffer
       // Lock the critical section
       pthread_mutex_lock(&mutex);
@@ -124,7 +116,7 @@ void *user_thread(void *args)
 
     } else if (input_char == 'r') {
 
-      printf("Received buffer: %s\n", recv_buffer);
+      printf("Received buffer: %s, already sent %lu times!\n", recv_buffer, send_counter);
 
     } else if (input_char != '\n'){
       strcat(input_buffer, &input_char); // Stores user input for other keys, do not put new line chars in
@@ -141,18 +133,9 @@ void *connection_thread(void *args)
 {
 
   while (true) {
-    run_ping();
+    client_send_buffer(send_buffer);
+    client_recv_buffer();
   }
-}
-
-/**
- * Run ping, send then receive
- */
-void run_ping()
-{
-
-  client_send_buffer(send_buffer);
-  client_recv_buffer();
 }
 
 /**
@@ -161,8 +144,6 @@ void run_ping()
  */
 void client_send_buffer(char *buffer)
 {
-  // Lock the critical section, if not possible, then forget about it lol...
-  pthread_mutex_lock(&mutex);
   ssize_t send_size;
 
   if (!buffer) {
@@ -170,8 +151,13 @@ void client_send_buffer(char *buffer)
     return;
   }
 
+  // Lock the critical section, if not possible, then forget about it lol...
+  pthread_mutex_trylock(&mutex);
+
   // Send some junk data
   send_size = send(socket_fd, buffer, STRING_BUFFER_SIZE, 0);
+
+  pthread_mutex_unlock(&mutex);
 
   // Detect if something wrong
   if (send_size < 0) {
@@ -181,7 +167,8 @@ void client_send_buffer(char *buffer)
     fprintf(stderr, "Send: client disconnected!");
     return;
   }
-  pthread_mutex_unlock(&mutex);
+
+  send_counter += 1;
 }
 
 /**
