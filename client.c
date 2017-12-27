@@ -35,6 +35,7 @@ void client_init(char *ip_addr, uint16_t port)
 
   struct sockaddr_in sock_addr;
   int connect_ret;
+  uint64_t time_taken;
 
   // Register socket
   socket_fd = socket(PF_INET, SOCK_STREAM, 0);
@@ -57,7 +58,7 @@ void client_init(char *ip_addr, uint16_t port)
     fprintf(stderr, "Connect: connection failed, reason: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
   } else {
-    printf("[DEBUG] Init: connected!");
+    printf("[DEBUG] Init: connected!\n");
   }
 
   // Initialise string buffer
