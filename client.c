@@ -98,18 +98,22 @@ void *user_thread(void *args)
   printf("UserThread: Initialisation finished, you can now input something.\n");
   while (true) {
 
-    // Lock the critical section
-    pthread_mutex_lock(&mutex);
-
     input_char = (char) fgetc(stdin);
 
     if (input_char == 's') {
+
+      // Lock the critical section
+      // Only the communication between send buffer and input buffer should be locked, as they are actually
+      // the ones which related to multi-threading stuff.
+      pthread_mutex_lock(&mutex);
 
       // Wipe the send buffer, then move the data from input buffer to send buffer
       printf("Changing send_buffer to: %s", input_buffer);
       memset(send_buffer, '\0', STRING_BUFFER_SIZE);
       strcpy(send_buffer, input_buffer);
       memset(input_buffer, '\0', STRING_BUFFER_SIZE);
+
+      pthread_mutex_unlock(&mutex);
 
     } else if (input_char == 'r') {
 
@@ -119,7 +123,7 @@ void *user_thread(void *args)
       strcat(input_buffer, &input_char); // Stores user input for other keys
     }
 
-    pthread_mutex_unlock(&mutex);
+
   }
 }
 
@@ -133,9 +137,6 @@ void *connection_thread(void *args)
 
   while (true) {
     run_ping();
-
-    // +1s, long lives to the server...
-    sleep(1);
   }
 }
 
@@ -186,7 +187,8 @@ void client_recv_buffer()
 {
 
   ssize_t recv_size;
-  memset(recv_buffer, '\0', STRING_BUFFER_SIZE);
+
+  // Receive the package, if length is -1 then it must have been fucked up somehow.
   recv_size = recv(socket_fd, recv_buffer, STRING_BUFFER_SIZE, 0);
 
   // Check the return size
