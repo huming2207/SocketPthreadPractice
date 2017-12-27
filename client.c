@@ -108,9 +108,16 @@ void *user_thread(void *args)
       pthread_mutex_lock(&mutex);
 
       // Wipe the send buffer, then move the data from input buffer to send buffer
+      // Lock the critical section
+      pthread_mutex_lock(&mutex);
+
       printf("Changing send_buffer to: %s", input_buffer);
       memset(send_buffer, '\0', STRING_BUFFER_SIZE);
       strcpy(send_buffer, input_buffer);
+
+      // Critical section ends here
+      pthread_mutex_unlock(&mutex);
+
       memset(input_buffer, '\0', STRING_BUFFER_SIZE);
 
       pthread_mutex_unlock(&mutex);
@@ -119,11 +126,9 @@ void *user_thread(void *args)
 
       printf("Received buffer: %s\n", recv_buffer);
 
-    } else {
-      strcat(input_buffer, &input_char); // Stores user input for other keys
+    } else if (input_char != '\n'){
+      strcat(input_buffer, &input_char); // Stores user input for other keys, do not put new line chars in
     }
-
-
   }
 }
 
@@ -157,8 +162,7 @@ void run_ping()
 void client_send_buffer(char *buffer)
 {
   // Lock the critical section, if not possible, then forget about it lol...
-  // Use mutex_trylock is because user input is more important (locked mutex might block reading from stdin?).
-  pthread_mutex_trylock(&mutex);
+  pthread_mutex_lock(&mutex);
   ssize_t send_size;
 
   if (!buffer) {
@@ -185,10 +189,8 @@ void client_send_buffer(char *buffer)
  */
 void client_recv_buffer()
 {
-
   ssize_t recv_size;
 
-  // Receive the package, if length is -1 then it must have been fucked up somehow.
   recv_size = recv(socket_fd, recv_buffer, STRING_BUFFER_SIZE, 0);
 
   // Check the return size
@@ -197,5 +199,4 @@ void client_recv_buffer()
   } else if (recv_size == 0) {
     printf("recv: server disconnected!");
   }
-
 }
