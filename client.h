@@ -8,27 +8,20 @@
 #include <stdint.h>
 #include <zconf.h>
 
+#define STRING_BUFFER_SIZE      3072
 
 void client_init(char *ip_addr, uint16_t port);
-
 void *user_thread(void *args);
-
 void *connection_thread(void *args);
+void *save_thread(void *args);
 
-void client_send_buffer(char *buffer);
-
-void client_recv_buffer();
-
-char *recv_buffer;
-
+char input_buffer[STRING_BUFFER_SIZE];
 char *send_buffer;
-
-char *input_buffer;
-
+char *recv_buffer;
 char input_char;
 
-static unsigned long send_counter;
+static unsigned long long send_counter;
+static unsigned long long save_counter;
 
-#define STRING_BUFFER_SIZE      3072
 
 #endif //SOCKETPTHREADPRACTISE_CLIENT_H

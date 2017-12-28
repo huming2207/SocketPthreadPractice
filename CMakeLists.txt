@@ -4,5 +4,5 @@ project(SocketPthreadPractise C)
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -lpthread -pedantic -Wno-comments")
 
-add_executable(SocketPthreadPractise main.c main.h client.c client.h)
+add_executable(SocketPthreadPractise main.c main.h client.c client.h data_list.c data_list.h)
 target_link_libraries(SocketPthreadPractise pthread)
